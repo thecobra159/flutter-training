@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:whats_app/signup.dart';
+
+import 'model/user.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -7,6 +10,56 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  var auth = FirebaseAuth.instance;
+  var _controllerEmail = TextEditingController();
+  var _controllerPass = TextEditingController();
+  var _errorMessage = "";
+
+  _logIn(User user) {
+    auth
+        .signInWithEmailAndPassword(email: user.email, password: user.password)
+        .then((firebaseUser) {
+      Navigator.pushReplacementNamed(context, "/home");
+    }).catchError((ex) {
+      setState(() {
+        _errorMessage = "Erro ao realizar o login, verifique os campos!";
+      });
+    });
+  }
+
+  _validateFields() {
+    var email = _controllerEmail.text;
+    var pass = _controllerPass.text;
+
+    if (email.isEmpty && !email.contains("@")) {
+      setState(() {
+        _errorMessage = "Preencha o email corretamente";
+      });
+    } else {
+      if (pass.isEmpty && pass.length < 6) {
+        setState(() {
+          _errorMessage = "A senha deve ter mais de 6 chars";
+        });
+      } else {
+        var user = User("", email, pass);
+        _logIn(user);
+      }
+    }
+  }
+
+  Future _isLoggedUser() async {
+    var userLogged = await auth.currentUser();
+    if (userLogged != null) {
+      Navigator.pushReplacementNamed(context, "/home");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoggedUser();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,6 +69,8 @@ class _LoginState extends State<Login> {
         child: Center(
           child: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Padding(
@@ -29,7 +84,7 @@ class _LoginState extends State<Login> {
                 Padding(
                   padding: EdgeInsets.only(bottom: 8),
                   child: TextField(
-                    autofocus: true,
+                    controller: _controllerEmail,
                     keyboardType: TextInputType.emailAddress,
                     style: TextStyle(fontSize: 20),
                     decoration: InputDecoration(
@@ -37,11 +92,15 @@ class _LoginState extends State<Login> {
                       hintText: "E-mail",
                       filled: true,
                       fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide()),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide()),
                     ),
                   ),
                 ),
                 TextField(
+                  controller: _controllerPass,
+                  obscureText: true,
                   keyboardType: TextInputType.text,
                   style: TextStyle(fontSize: 20),
                   decoration: InputDecoration(
@@ -49,7 +108,9 @@ class _LoginState extends State<Login> {
                     hintText: "Senha",
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide()),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide()),
                   ),
                 ),
                 Padding(
@@ -64,7 +125,9 @@ class _LoginState extends State<Login> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      _validateFields();
+                    },
                   ),
                 ),
                 Center(
@@ -74,10 +137,23 @@ class _LoginState extends State<Login> {
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => SignUp()));
                     },
                   ),
                 ),
+                Padding(
+                  padding: EdgeInsets.only(top: 15),
+                  child: Center(
+                    child: Text(
+                      _errorMessage,
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                )
               ],
             ),
           ),
