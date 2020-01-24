@@ -47,17 +47,9 @@ class _LoginState extends State<Login> {
     }
   }
 
-  Future _isLoggedUser() async {
-    var userLogged = await auth.currentUser();
-    if (userLogged != null) {
-      Navigator.pushReplacementNamed(context, "/home");
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    _isLoggedUser();
   }
 
   @override
