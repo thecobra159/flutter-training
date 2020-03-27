@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:whats_app/configurations.dart';
 import 'package:whats_app/home.dart';
+import 'package:whats_app/messages.dart';
 import 'package:whats_app/signup.dart';
 
 import 'login.dart';
@@ -8,6 +10,7 @@ class RouteGenerator {
 
   // ignore: missing_return
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    final args = settings.arguments;
     switch (settings.name) {
       case "/":
         return MaterialPageRoute(builder: (_) => Login());
@@ -17,6 +20,10 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => SignUp());
       case "/home":
         return MaterialPageRoute(builder: (_) => Home());
+      case "/configurations":
+        return MaterialPageRoute(builder: (_) => Configurations());
+      case "/messages":
+        return MaterialPageRoute(builder: (_) => Messages(args));
       default:
         _routeError();
     }
