@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:whats_app/model/conversation.dart';
+import 'package:whats_app/model/user.dart';
 
 class ContactsTab extends StatefulWidget {
   @override
@@ -7,61 +10,93 @@ class ContactsTab extends StatefulWidget {
 }
 
 class _ContactsTabState extends State<ContactsTab> {
-  var _conversationsList = [
-    Conversation(
-        "Ana Clara",
-        "Olá, tudo bem?",
-        "https://firebasestorage.googleapis.com/v0/b/whatsapp-flutter-6dd4b.appspot.com/o/profile%2Fperfil1.jpg?alt=media&token=9b570454-689f-4321-94e8-91d65b7bec02"
-    ),
-    Conversation(
-        "Pedro Silva",
-        "Me manda o nome daquela série?",
-        "https://firebasestorage.googleapis.com/v0/b/whatsapp-flutter-6dd4b.appspot.com/o/profile%2Fperfil2.jpg?alt=media&token=c98bdb5d-1ca5-4231-b36f-f1a62272dd37"
-    ),
-    Conversation(
-        "Marcela Almeida",
-        "Vamos sair hoje?",
-        "https://firebasestorage.googleapis.com/v0/b/whatsapp-flutter-6dd4b.appspot.com/o/profile%2Fperfil3.jpg?alt=media&token=e1858df1-944f-43e3-8754-0bee7a40d05d"
-    ),
-    Conversation(
-        "José Renato",
-        "Não vai acreditar no que eu tenho para te contar...",
-        "https://firebasestorage.googleapis.com/v0/b/whatsapp-flutter-6dd4b.appspot.com/o/profile%2Fperfil4.jpg?alt=media&token=8d84ee9c-852e-4c6c-adfc-965688c7fd8e"
-    ),
-    Conversation(
-        "Spoder",
-        "Shazu carai!",
-        "https://firebasestorage.googleapis.com/v0/b/whatsapp-flutter-6dd4b.appspot.com/o/profile%2Fperfil5.png?alt=media&token=63a7964d-15a0-4b63-a708-790af3918ce0"
-    ),
-    Conversation(
-        "Arthur",
-        "All I have are negative thoughts",
-        "https://firebasestorage.googleapis.com/v0/b/whatsapp-flutter-6dd4b.appspot.com/o/profile%2Fperfil6.jpeg?alt=media&token=82418e5a-02e5-4310-9b6e-724682fef485"
-    ),
-  ];
+  var _auth = FirebaseAuth.instance;
+  var _db = Firestore.instance;
+  var _idLoggedUser = "";
+  var _emailLoggedUser = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _recoverUser();
+  }
+
+  _recoverUser() async {
+    var loggedUser = await _auth.currentUser();
+    _idLoggedUser = loggedUser.uid;
+    _emailLoggedUser = loggedUser.email;
+  }
+
+  Future<List<User>> _recoverUsers() async {
+    QuerySnapshot snapshot = await _db.collection("users").getDocuments();
+    print("users -> $snapshot");
+
+    List<User> listUsers = List();
+    for (DocumentSnapshot item in snapshot.documents) {
+      var data = item.data;
+      print("data -> $data");
+      if (data["email"] == _emailLoggedUser) continue;
+
+      var user =
+          User.consturctor(data["name"], data["email"], data["imageUrl"]);
+      listUsers.add(user);
+    }
+    print("list -> ${listUsers.length}");
+    return listUsers;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: ListView.builder(
-        itemCount: _conversationsList.length,
-        itemBuilder: (context, index) {
-          var conversation = _conversationsList[index];
-          return ListTile(
-            contentPadding: EdgeInsets.fromLTRB(15, 8, 15, 8),
-            leading: CircleAvatar(
-              maxRadius: 28,
-              backgroundColor: Colors.grey,
-              backgroundImage: NetworkImage(conversation.picPath),
-            ),
-            title: Text(
-              conversation.name,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15
-              ),
-            ),
-          );
+      child: FutureBuilder<List<User>>(
+        future: _recoverUsers(),
+        // ignore: missing_return
+        builder: (context, snapshot) {
+          switch (snapshot.connectionState) {
+            case ConnectionState.none:
+            case ConnectionState.waiting:
+              return Center(
+                child: Column(
+                  children: <Widget>[
+                    Text("Carregando contatos"),
+                    CircularProgressIndicator(),
+                  ],
+                ),
+              );
+              break;
+            case ConnectionState.active:
+            case ConnectionState.done:
+              print(snapshot);
+              return ListView.builder(
+                itemCount: snapshot.data.length,
+                itemBuilder: (_, index) {
+                  var list = snapshot.data;
+                  var user = list[index];
+                  return ListTile(
+                    onTap: () {
+                      Navigator.pushNamed(
+                          context,
+                          "/messages",
+                          arguments: user);
+                    },
+                    contentPadding: EdgeInsets.fromLTRB(15, 8, 15, 8),
+                    leading: CircleAvatar(
+                      maxRadius: 28,
+                      backgroundColor: Colors.grey,
+                      backgroundImage: user.imageUrl != null
+                          ? NetworkImage(user.imageUrl)
+                          : null,
+                    ),
+                    title: Text(
+                      user.name,
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                  );
+                },
+              );
+              break;
+          }
         },
       ),
     );
