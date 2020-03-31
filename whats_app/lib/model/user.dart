@@ -1,4 +1,5 @@
 class User {
+  String _userId;
   String _name;
   String _email;
   String _password;
@@ -15,6 +16,12 @@ class User {
   String get name => _name;
 
   String get imageUrl => _imageUrl;
+
+  String get userId => _userId;
+
+  set userId(String value) {
+    _userId = value;
+  }
 
   Map<String, dynamic> toMap() {
     return {

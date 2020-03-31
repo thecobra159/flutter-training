@@ -12,36 +12,33 @@ class ContactsTab extends StatefulWidget {
 class _ContactsTabState extends State<ContactsTab> {
   var _auth = FirebaseAuth.instance;
   var _db = Firestore.instance;
-  var _idLoggedUser = "";
   var _emailLoggedUser = "";
 
   @override
   void initState() {
     super.initState();
     _recoverUser();
+    _recoverUsers();
   }
 
   _recoverUser() async {
     var loggedUser = await _auth.currentUser();
-    _idLoggedUser = loggedUser.uid;
     _emailLoggedUser = loggedUser.email;
   }
 
   Future<List<User>> _recoverUsers() async {
     QuerySnapshot snapshot = await _db.collection("users").getDocuments();
-    print("users -> $snapshot");
 
     List<User> listUsers = List();
     for (DocumentSnapshot item in snapshot.documents) {
       var data = item.data;
-      print("data -> $data");
       if (data["email"] == _emailLoggedUser) continue;
 
       var user =
           User.consturctor(data["name"], data["email"], data["imageUrl"]);
+      user.userId = item.documentID;
       listUsers.add(user);
     }
-    print("list -> ${listUsers.length}");
     return listUsers;
   }
 
@@ -66,7 +63,6 @@ class _ContactsTabState extends State<ContactsTab> {
               break;
             case ConnectionState.active:
             case ConnectionState.done:
-              print(snapshot);
               return ListView.builder(
                 itemCount: snapshot.data.length,
                 itemBuilder: (_, index) {

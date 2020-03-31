@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:whats_app/screens/contacts_tab.dart';
@@ -16,9 +18,18 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     "Deslogar",
   ];
 
+  _logIn() {
+    var user = _auth.currentUser();
+
+    if(user == null) {
+      Navigator.pushReplacementNamed(context, "/login");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _logIn();
     _tabController = new TabController(length: 2, vsync: this);
   }
 
@@ -44,9 +55,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         title: Text("WhatsApp"),
+        elevation: Platform.isIOS ? 0 : 4,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
+          indicatorColor: Platform.isIOS ? Colors.grey[400] : Colors.white,
           indicatorWeight: 5,
           labelStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           tabs: <Widget>[
